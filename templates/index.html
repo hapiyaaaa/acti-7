@@ -36,6 +36,26 @@
     <pre id="customResult"></pre>
     </section>
 
+    <section>
+    <h2>Students from Database</h2>
+    <button onclick="loadStudents()">Load Students</button>
+    <div id="studentList"></div>
+    </section>
+
+    <section>
+    <h2>Find Student by Database ID</h2>
+    <input type="number" id="idInput" min="1" placeholder="e.g. 1 or 2">
+    <button onclick="findStudent()">Find Student</button>
+    <div id="studentOne"></div>
+    </section>
+
+    <section>
+    <h2>Filter Students by Section</h2>
+    <input type="text" id="filterInput" placeholder="A, B, C">
+    <button onclick="filterStudents()">Search Section</button>
+    <div id="filterList"></div>
+    </section>
+
     <script>
         function loadStudent() {
             fetch('/student')
@@ -78,6 +98,54 @@
                     document.getElementById('customResult').innerText =
                         'Unable to retrieve data.';
                 });
+        }
+
+        function esc(v) {
+            const d = document.createElement('div');
+            d.textContent = v;
+            return d.innerHTML;
+        }
+
+        function renderStudent(s) {
+            return '<p><b>' + esc(s.student_id) + '</b> - ' +
+                esc(s.name) + ' | ' +
+                esc(s.program) + ' | Year ' +
+                esc(s.year) + ' | Section ' +
+                esc(s.section) + '</p>';
+        }
+
+        function show(url, target, many) {
+            const box = document.getElementById(target);
+            fetch(url)
+                .then(response => response.json().then(data => ({ ok: response.ok, data })))
+                .then(({ ok, data }) => {
+                    if (!ok) {
+                        box.innerHTML = '<p>' + esc(data.error || 'Request failed.') + '</p>';
+                    } else if (many) {
+                        box.innerHTML = data.length
+                            ? data.map(renderStudent).join('')
+                            : '<p>No students found.</p>';
+                    } else {
+                        box.innerHTML = renderStudent(data);
+                    }
+                })
+                .catch(error => {
+                    box.innerHTML = '<p>Unable to retrieve student records.</p>';
+                });
+        }
+
+        function loadStudents() {
+            show('/students', 'studentList', true);
+        }
+
+        function findStudent() {
+            const id = document.getElementById('idInput').value;
+            show('/students/' + encodeURIComponent(id), 'studentOne', false);
+        }
+
+        function filterStudents() {
+            const v = document.getElementById('filterInput').value.trim();
+            show('/students/section/' + encodeURIComponent(v), 'filterList', true);
         }
     </script>
 </body>
